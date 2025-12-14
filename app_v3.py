@@ -486,14 +486,14 @@ function getLevelConfig(level) {
   let paddleSpeed = 80;
 
   if (level === 1) {
-    paddleH = 70; ballSize = 12; ballVx = 55; ballVy = 40; paddleSpeed = 75;
+    paddleH = 90; ballSize = 24; ballVx = 55; ballVy = 40; paddleSpeed = 75;
   } else if (level === 2) {
-    paddleH = 55; ballSize = 9;  ballVx = 65; ballVy = 48; paddleSpeed = 80;
+    paddleH = 70; ballSize = 16;  ballVx = 65; ballVy = 48; paddleSpeed = 80;
   } else if (level === 3) {
-    paddleH = 42; ballSize = 7;  ballVx = 70; ballVy = 52; paddleSpeed = 85;
+    paddleH = 50; ballSize = 12;  ballVx = 70; ballVy = 52; paddleSpeed = 85;
   } else if (level === 4) {
     // speed-up level
-    paddleH = 42; ballSize = 7;  ballVx = 95; ballVy = 70; paddleSpeed = 95;
+    paddleH = 40; ballSize = 12;  ballVx = 95; ballVy = 70; paddleSpeed = 95;
   }
 
   return { paddleH, ballSize, ballVx, ballVy, paddleSpeed };
