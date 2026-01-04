@@ -33,7 +33,8 @@ CHUNK_SECS        = 0.05            # processing step (50 ms)
 
 # Settings that we can tweak from UI:
 DEFAULT_THRESHOLD_UV   = 150.0      # µV above baseline
-DEFAULT_COOLDOWN_SECS  = 0.35        # min seconds between blink events
+DEFAULT_COOLDOWN_SECS  = 0.2        # min seconds between blink events
+BLINK_OFF_FACTOR = 0.3              # when to consider blink ended (fraction of threshold)
 
 SIGNAL_BUFFER_SECS = 10.0            # seconds of signal to keep for plotting
 MAX_SIGNAL_POINTS  = 1000           # max samples to send to frontend
@@ -155,26 +156,28 @@ def eeg_detector_loop():
                 if len(baseline_buf) < baseline_len:
                     continue
 
-                base_mean = float(np.mean(baseline_buf))
-                diff = float(v_abs - base_mean)
+                base_level = float(np.median(baseline_buf))
+                diff = float(v_abs - base_level)
                 now = time.time()
 
-                over = (diff > th) and (v_abs > th)
+                th_on = th
+                th_off = th * BLINK_OFF_FACTOR
 
-                # 1) Enter blink: only once per episode + respect cooldown
-                if over and (not blink_active) and (now - last_blink_ts) >= cd:
+                over_on = (diff > th_on) and (v_abs > th_on)
+
+                # 1) Enter blink: only per per episode + respect cooldown
+                if over_on and (not blink_active) and (now - last_blink_ts) >= cd:
                     blink_active = True
                     with state_lock:
                         last_blink_ts = now
                         blink_pending = True
                         last_event_text = (
-                            f"BLINK at {time.strftime('%H:%M:%S', time.localtime(now))} | "
-                            f"val={v_abs:.1f} µV, base={base_mean:.1f} µV, diff={diff:.1f} µV, "
-                            f"thr={th:.1f} µV, cooldown={cd:.2f} s"
+                        f"BLINK at {time.strftime('%H:%M:%S', time.localtime(now))} | "
+                        f"val={v_abs:.1f} µV, base={base_level:.1f} µV, diff={diff:.1f} µV, "
+                        f"TH_ON={th_on:.1f} µV, TH_OFF={th_off:.1f} µV, cooldown={cd:.2f} s"
                         )
-
-                # 2) Exit blink: when we’re back near baseline
-                if blink_active and diff < th * 0.3:
+                # 2) Exit blink
+                if blink_active and diff < th_off:
                     blink_active = False
 
             time.sleep(0.005)
