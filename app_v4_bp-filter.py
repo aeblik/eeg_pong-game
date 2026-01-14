@@ -39,7 +39,7 @@ fs_global = 250.0
 def apply_filters(data, fs, notch_freq=50):
     if len(data) < 100: return data
 
-    data = data-np.mean(data) 
+    data = data-np.median(data) 
 
     nyq = 0.5 * fs
     # Notch Filter
