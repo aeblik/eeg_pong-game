@@ -412,9 +412,9 @@ let lastTime=0;
 function getLevelConfig(level) {
   const lvl = parseInt(level);
   // Easy
-  if (lvl === 1) return { paddleH: 100, ballSize: 22, ballVx: 175, ballVy: 125, paddleSpeed: 250 };
+  if (lvl === 1) return { paddleH: 100, ballSize: 22, ballVx: 150, ballVy: 125, paddleSpeed: 200 };
   // Normal
-  if (lvl === 2) return { paddleH: 80, ballSize: 16, ballVx: 250, ballVy: 175, paddleSpeed: 300 };
+  if (lvl === 2) return { paddleH: 80, ballSize: 16, ballVx: 250, ballVy: 175, paddleSpeed: 275 };
   // Fast
   if (lvl === 3) return { paddleH: 60, ballSize: 10, ballVx: 400, ballVy: 300, paddleSpeed: 350 };
   // Expert
