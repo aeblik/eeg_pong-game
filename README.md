@@ -3,6 +3,7 @@
 This repositors contains a real-time EEG-based Brain-Computer Interface (BCI) appliction in the form of a classic Pong game, where the user can control the paddle using eye blinks. The eye blinks are detected from the EEG (Electroencephalogram) signal and act as direction changes of the paddle. This application was developed in the context of ZHAW ACLS Track module 1.
 
 If you are only interested in setting up and running the application move directly to Section 12.
+
 ---
 
 ## 1. Project Motivation & Goal
@@ -39,10 +40,11 @@ The EOG spikes that are created from eye blinks stem from the fact that the huma
 
 Since the EOG artifact travels over the forehead, it is best detected from the two frontal electrodes on the forehead, while the electrodes on the ears act as groundings (see Figure 1).
 
-<figure>
-<img src="../images/electrode_forehead.png" alt="Electrodes_forehead"/>
-<figure-caption>Figure 1. Electrode positions (Deepu et al., 2024).</figure-caption>
-</figure>
+![Electrode_Positions](images/electrode_forehead.png)
+
+Figure 1. Electrode positions (Deepu et al., 2024).
+
+
 
 Since baseline brain activity ist often rhythmic, the blink artifacts show up as sharp peaks that can be identified well.
 
@@ -58,7 +60,7 @@ Challenges in the implementation of the blink-controlled Pong game included:
 
 The application runs as a Flask web application with a live dashboard, calibration method, canvas for the pong game and a signal livestream. 
 
-```
+```mermaid
 graph TD
     subgraph Hardware
         A[OpenBCI Cyton] -->|USB Dongle| B(BrainFlow Input)
@@ -66,17 +68,21 @@ graph TD
 
     subgraph "Python Backend (Flask)"
         B --> C{Signal Buffer}
-        C --> D[Preprocessing]
-        D -->|Mean-Centering| E[Notch Filter 50Hz]
-        E --> F[Bandpass Filter 1-10Hz]
+        
+        subgraph "Signal Preprocessing"
+            C --> D[1. Median Subtraction]
+            D --> E[2. Zero-Phase Notch 50Hz]
+            E --> F[3. Zero-Phase Bandpass 1-10Hz]
+        end
+        
         F --> G[Schmitt Trigger Logic]
-        G -->|Blink Detected| H[(API State)]
+        G -->|Blink Event| H[(Global State)]
     end
 
     subgraph "Frontend (Browser)"
         I[Game Loop] -->|Polls /api/events| H
-        H -->|JSON Response| I
-        I --> J[Update Paddle Position]
+        H -->|JSON| I
+        I --> J[Update Paddle Direction]
     end
 ```
 
@@ -91,7 +97,7 @@ graph TD
 ### Signal Acquisition
 
 - Continuous streaming via [BrainFlow Python Library](https://brainflow.org/).
-- Two frontal forehead channels are averaged to increase SNR (signal to noise ratio).
+- Two frontal forehead channels are averaged to increase SNR (Signal-to-Noise Ratio).
 - Data is buffered in sliding windows for stable filtering.
 
 ---
@@ -102,7 +108,7 @@ All signal processing steps are  implemented using *numpy* and *scipy.signal*.
 
 ### 6.1 DC Offset Removal
 
-EEG signals often contain a gradual baseline drift due to the electrode offsets and skin potentials, making the signal shift over time.
+EEG signals often contain a gradual baseline drift due to electrode-skin impedence, making the signal shift over time.
 
 **Method:**
 - Subtract the median of the signal window.
@@ -120,13 +126,12 @@ Powerlines in the Europe work at 50 Hz and can interfere with the EEG measuremen
 ### 6.3 Band-Pass Filter (Signal Isolation)
 
 - 1-10 Hz band-pass filter.
-- Isolates the signal to focus on blink-related activity.
+- Isolates the signal to focus on blink-related activity, maximizing SNR.
 - Suppresses muscle artifacts and higher frequency signal components such as brain activity.
 
-### 6.4 Zero-Phase Filtering
+### 6.4 Zero-Phase Implementation
 
-- Implemented using `filtfilt`
-- Avoid phase distortion
+Critical for real-time gaming is low latency. This was ensured by applying all filters using `scipy.signal.filtfilt` (forward-backward filtering). This avoids phase distortion. Normal filters shift the signal in time and create lag, while zero-phase filtering ensures that the peak of the blink aligns with the actual blink. 
 
 ---
 
@@ -138,10 +143,10 @@ Powerlines in the Europe work at 50 Hz and can interfere with the EEG measuremen
 - Detection is based on an absolute amplitude threshold.
 - A blink is triggered once the signal exceeds a defined threshold.
 
-<figure>
-<img src="../images/blink_signal.png" alt="Blink_signal"/>
-<figure-caption>Figure 2. Example of the live streamed signal in the Flask app, showing blink peaks.</figure-caption>
-</figure>
+![Blink_signal](images/blink_signal.png)
+
+Figure 2. Example of the live streamed signal in the Flask app, showing blink peaks.
+
 
 ### 7.2 Schmitt-Trigger Logic
 
@@ -202,10 +207,10 @@ Testing the application with seven participants (age 25-64) yielded the followin
 
 The evaluation showed, that blinks are clearly detectable, but performance depends on environment and user adaptation. Further, there can be seen a learning effect as users learn how to blink "correctly" for identification. 
 
-<figure>
-<img src="../images/confus_matrix.png" alt="Confusion_Matrix"/>
-<figure-caption>Figure 3. Confusion Matrix of quantitative analysis.</figure-caption>
-</figure>
+![Confusion_Matrix](images/confus_matrix.png)
+
+Figure 3. Confusion Matrix of quantitative analysis.
+
 
 ## 12. Setup and Execution
 
