@@ -194,7 +194,7 @@ To account for the inter-user variability a calibration procedure was implemente
 4. Calibration is finished once the light stays green
 
 Based on the calibration a threshold for the blink detection is estimated as: 
-$\text{threshold} = \mu_{\text{noise}} + 0.6 \, (\mu_{\text{blink}} - \mu_{\text{noise}})$
+$\text{threshold} = \mu_{\text{noise}} + 0.6 \times (\mu_{\text{blink}} - \mu_{\text{noise}})$
 
 where $\mu_{noise}$ is the mean noise amplitude and $\mu_{blink}$ is the mean blink amplitude. 
 
