@@ -6,6 +6,20 @@ If you are only interested in setting up and running the application move direct
 
 ---
 
+## 0. Repository Structure
+
+This repository is structured as follows:
+
+```text
+/
+├── app_v4_bp-filter.py       # MAIN APPLICATION: Flask server and real-time EEG processing for the Pong game
+├── detection_analysis.py     # EVALUATION SCRIPT: Quantitative analysis tool
+├── detection_analysis.xlsx   # DATA: Quantitative evaluation of seven participants
+├── requirements.txt          # DEPENDENCIES: Required Python libraries (BrainFlow, Scipy, Flask, etc.)
+├── EEG-Pong-Game.pptx        # PRESENTATION: Project overview and slide deck for the module presentation
+├── /images                   # IMAGES: Pictures used in this Readme.md
+```
+
 ## 1. Project Motivation & Goal
 
 Eye blinks are a natural human action and produce strong **electro-oculographic (EOG)** artifacts in an EEG signal that can be used for blink detection.
