@@ -1,8 +1,8 @@
 # EEG Blink-Controlled Pong Game
 
-This repositors contains a real-time EEG-based Brain-Computer Interface (BCI) appliction in the form of a classic Pong game, where the user can control the paddle using eye blinks. The eye blinks are detected from the EEG (Electroencephalogram) signal and act as direction changes of the paddle. This application was developed in the context of ZHAW ACLS Track module 1.
+This repository contains a real-time EEG-based Brain-Computer Interface (BCI) appliction in the form of a classic Pong game, where the user can control the paddle using eye blinks. The eye blinks are detected from the EEG (Electroencephalogram) signal and act as direction changes of the paddle. This application was developed in the context of ZHAW ACLS Track module 1.
 
-If you are only interested in setting up and running the application move directly to Section 12.
+If you are only interested in setting up and running the application move directly to Section 12. Make sure to also read the preparation and calibration guidelines.
 
 ---
 
@@ -25,8 +25,9 @@ The project focuses on robust and efficient threshold-based detection, rather th
 **EEG General:**
 
 - EEG is a non-invasive measurement of the electric fields in the brain.
-- Electrodes on the skin record voltage potentials.
+- Electrodes on the skin record voltage potentials resulting from neuronal communication.
 - Large neuron populations must be active simultaneously for EEG to be detected successfully.
+- EEG does not measure action potentials but postsynaptic potentials which result from slower currents after neurotransmitter release, that are easier to detect.
 - There are several noise factors, such as powerlines, environmental distractions or movement of the user.
 
 **EEG in the context of blink detection:**
@@ -46,7 +47,7 @@ Figure 1. Electrode positions (Deepu et al., 2024).
 
 
 
-Since baseline brain activity ist often rhythmic, the blink artifacts show up as sharp peaks that can be identified well.
+Since baseline brain activity is often rhythmic, the blink artifacts show up as sharp peaks that can be identified well.
 
 ## 3. Challenges
 
@@ -54,7 +55,7 @@ Challenges in the implementation of the blink-controlled Pong game included:
 
 - Various sources of noise such as environmental noise and user movement.
 - Blinking induces a sharp peak in the signal that was often detected as two blinks in the early development stages.
-- There is a big variability between different persons in the amplitude of blink-peaks, probably due to skin impedence.
+- There is a big variability between different persons in the amplitude of blink-peaks, probably due to skin impedance.
 
 ## 4. System Architecture 
 
@@ -121,7 +122,7 @@ EEG signals often contain a gradual baseline drift due to electrode-skin impeden
 - 50 Hz (Eu) or 60 Hz (US).
 - Implemented using an IIR notch filter.
 
-Powerlines in the Europe work at 50 Hz and can interfere with the EEG measurements. Hence this frequency should be removed. 
+Powerlines in Europe work at 50 Hz and can interfere with the EEG measurements. Hence this frequency should be removed. 
 
 ### 6.3 Band-Pass Filter (Signal Isolation)
 
@@ -153,11 +154,35 @@ Figure 2. Example of the live streamed signal in the Flask app, showing blink pe
 To avoid double blink triggers, a two-threshold logic is used:
 
 - **BLINK-ON:**
-    - |signal| > threshold
+    - Triggered when $|signal| > threshold$
+    - The system enters the *Active Blink* state and changes the paddle's direction
+- **BLINK-OFF:**
+    - The detector resets when $|signal| < (threshold \times 0.3)$
+    - Since blinks are not smooth peaks, they might exceed the threshold several times. Hence, the system only exits the *Active Blink* state, once the signal gets close to the baseline again.
+ 
+```mermaid
+stateDiagram-v2
+    direction LR
+    
+    [*] --> MONITORING
+    
+    state "MONITORING (BLINK-OFF)" as MONITORING
+    state "BLINK DETECTED 
+    (BLINK-ON)" as ACTIVE
 
+    MONITORING --> ACTIVE : Signal > Threshold
+    ACTIVE --> MONITORING : Signal < (Threshold × 0.3)
+    
+    note right of ACTIVE
+      System ignores noise
+      until signal returns
+      close to baseline
+    end note
+```
 
 ### 7.3 Cooldown Mechanism
 
+Additionally to the Schmitt-Trigger Logic a cooldown mechanism is implemented to prevent double triggers and handle user variability. Some users showed artifacts after blink peaks, resulting in double triggers. The cooldown mechanism ensures, that only every $200ms$ a blink can be triggered, serving as a safety layer. The cooldown time can be adapted in the script and in the application. 
 
 ## 8. Calibration Procedure
 
@@ -168,7 +193,10 @@ To account for the inter-user variability a calibration procedure was implemente
 3. Process repeated several times
 4. Calibration is finished once the light stays green
 
-Based on the calibration a threshold is estimated as: $threshold = noise\_mean + 0.6 * (blink\_mean - noise\_mean)$
+Based on the calibration a threshold for the blink detection is estimated as: 
+$\text{threshold} = \mu_{\text{noise}} + 0.6 \, (\mu_{\text{blink}} - \mu_{\text{noise}})$
+
+where $\mu_{noise}$ is the mean noise amplitude and $\mu_{blink}$ is the mean blink amplitude. 
 
 In words, the threshold to trigger a blink is equal to the baseline (or noise) plus 60% of the blink peaks.
 
@@ -214,6 +242,8 @@ Figure 3. Confusion Matrix of quantitative analysis.
 
 ## 12. Setup and Execution
 
+### 12.1 Running the application
+
 1) Create and install the environment
 
 `py -m venv .eeg`
@@ -230,7 +260,25 @@ Figure 3. Confusion Matrix of quantitative analysis.
 
 `http://localhost:5000`
 
+### 12.2 Preparation
+
+- Ensure the electrodes are tight against your skin on the forehead with no hair between.
+- Try to stay still and not move during calibration and gaming.
+- Attach the ground electrodes to your ears.
+
+### 12.3 Calibration & Gameplay
+
+- Connect the OpenBCI Dongle to your PC and ensure the Cyton board is switched to "PC" mode.
+- You might have to adjust the `SERIAL_PORT` in the python script such that it matches the port you are using.
+- Click "Initialize Cyton" and wait until the datastream appears on the left panel (you might have to scroll down) and the `Detector Status` says *RUNNING*.
+- Click "Start Calibration" - the left panel will guide you when to *relax* and when to *blink*.
+- When calibrating and playing the pong game, try to blink "naturally". Do not pinch your eyes.
+- Once the calibration is done, the light remains green and your suggested threshold will be displayed.
+- There is no popup informing you, that calibration is done. This is a missdesign and could be resolved later on. 
+
 ## 13. References
+
+The physiological background on EEG and foundational signal processing steps were derived from the following references.
 
 Biasiucci, A., Franceschiello, B., & Murray, M. M. (2019). Electroencephalography. Current Biology, 29(3), R80–R85. https://doi.org/10.1016/j.cub.2018.11.052
 
